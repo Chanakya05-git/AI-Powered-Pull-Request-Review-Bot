@@ -1,0 +1,41 @@
+name: AI pull request review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted base-branch bot code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Run review and notify Slack
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PR_DIFF_URL: ${{ github.event.pull_request.diff_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLAUDE_MODEL: claude-sonnet-4-20250514
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ] || [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "::notice::Skipping review because required secrets are unavailable (fork PRs do not receive repository secrets)."
+            exit 0
+          fi
+          python review.py
