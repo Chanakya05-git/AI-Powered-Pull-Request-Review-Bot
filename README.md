@@ -54,6 +54,10 @@ Never commit API keys or webhook URLs. Rotate any credential that is accidentall
 
 The message contains the PR summary, issue locations and details, and complexity rating. A clean diff produces an explicit "No actionable issues found" message.
 
+## HTML Demo
+
+Open [`index.html`](index.html) directly in a browser to explore the sample review dashboard. It is a static front-end demo with example PR data; live reviews still run through `review.py` in GitHub Actions and are delivered to Slack. No API credentials are used in the HTML page.
+
 ## Test Fixtures
 
 The scripts in [`sample_issues/`](sample_issues/) include intentionally unsafe SQL interpolation and missing resource/error handling; `fragile_parser.py` shows defensive input validation. They are fixtures for a separate test repository; do not use the intentionally flawed examples in application code.

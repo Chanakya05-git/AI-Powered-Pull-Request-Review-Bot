@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f1">
+  <title>Review Desk | AI-Powered PR Review Bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f6f1;
+      --surface: #ffffff;
+      --ink: #18211c;
+      --muted: #6f7972;
+      --line: #dce2da;
+      --green: #c9ee62;
+      --green-deep: #345b29;
+      --orange: #e97651;
+      --orange-wash: #fff0e9;
+      --teal: #268f8d;
+      --teal-wash: #e7f5f2;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(24, 33, 28, 0.045) 1px, transparent 0) 0 0 / 18px 18px,
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+    button, a, select { -webkit-tap-highlight-color: transparent; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 236px minmax(0, 1fr);
+      min-height: 100vh;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 28px 18px 20px;
+      border-right: 1px solid var(--line);
+      background: rgba(248, 249, 246, 0.92);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 9px 34px;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      grid-template-columns: repeat(2, 8px);
+      gap: 3px;
+      width: 25px;
+      height: 25px;
+      align-content: center;
+      justify-content: center;
+      border-radius: 7px;
+      background: var(--ink);
+      transform: rotate(-5deg);
+    }
+
+    .brand-mark i { width: 8px; height: 8px; border-radius: 2px; background: var(--green); }
+    .brand-mark i:nth-child(2) { opacity: 0.55; }
+    .brand-mark i:nth-child(3) { opacity: 0.7; }
+
+    .brand-name { font-size: 13px; font-weight: 700; letter-spacing: 0; }
+    .brand-name span { display: block; margin-top: 2px; color: var(--muted); font: 10px var(--mono); }
+
+    .nav-label, .eyebrow {
+      color: var(--muted);
+      font: 10px var(--mono);
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .nav-label { padding: 0 11px; margin: 0 0 10px; }
+    .side-nav { display: grid; gap: 4px; }
+
+    .side-nav a {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 40px;
+      padding: 0 11px;
+      border-radius: 5px;
+      color: #58635b;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .side-nav a:hover, .side-nav a[aria-current="page"] { background: #e9eee4; color: var(--ink); }
+    .side-nav a[aria-current="page"] { font-weight: 700; }
+    .icon { width: 17px; height: 17px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+    .sidebar-bottom { margin-top: auto; }
+
+    .connection {
+      padding: 14px 13px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+    }
+
+    .connection-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: #4b9c62; box-shadow: 0 0 0 3px #e8f3e8; }
+    .connection p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .version { padding: 15px 11px 0; color: #909991; font: 10px var(--mono); }
+
+    main { min-width: 0; padding: 0 46px 60px; }
+
+    .topbar {
+      display: flex;
+      min-height: 70px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .crumb { color: var(--muted); font-size: 12px; }
+    .crumb strong { color: var(--ink); font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .demo-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px;
+      border: 1px solid #d7dda9;
+      border-radius: 4px;
+      background: #f4f7df;
+      color: #596527;
+      font: 10px var(--mono);
+      text-transform: uppercase;
+    }
+
+    .avatar {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid #c6d0c4;
+      border-radius: 50%;
+      background: #dce9d5;
+      color: #37543d;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .page-intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 34px 0 24px; }
+    h1 { margin: 7px 0 5px; font-size: 29px; line-height: 1.15; letter-spacing: 0; }
+    .page-intro p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .button-link, .quiet-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--ink);
+      border-radius: 4px;
+      background: var(--ink);
+      color: #fff;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .button-link:hover { background: #303d33; }
+    .button-link .icon { width: 14px; height: 14px; }
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      padding: 12px 14px;
+      border: 1px solid #e4d58b;
+      border-radius: 5px;
+      background: #fff9db;
+      color: #554b21;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .notice strong { font-weight: 700; }
+    .notice-mark { display: grid; width: 17px; height: 17px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #f2dc77; font: 11px var(--mono); }
+
+    .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 22px 0 30px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+    .metric { padding: 17px 20px; }
+    .metric + .metric { border-left: 1px solid var(--line); }
+    .metric-label { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
+    .metric-value { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; font-size: 23px; font-weight: 700; }
+    .metric-value small { color: var(--muted); font-size: 11px; font-weight: 400; }
+
+    .workspace-grid { display: grid; grid-template-columns: minmax(265px, 0.82fr) minmax(0, 1.65fr); gap: 24px; align-items: start; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; margin-bottom: 12px; }
+    h2 { margin: 0; font-size: 14px; letter-spacing: 0; }
+    .count { color: var(--muted); font: 10px var(--mono); }
+
+    .list-tools { display: flex; gap: 7px; margin-bottom: 10px; }
+    .search-wrap { position: relative; flex: 1; min-width: 0; }
+    .search-wrap .icon { position: absolute; top: 9px; left: 9px; width: 15px; height: 15px; color: #89928a; }
+    .search-input, .filter-select {
+      width: 100%;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      outline: none;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 11px;
+    }
+    .search-input { padding: 0 9px 0 31px; }
+    .filter-select { width: auto; max-width: 126px; padding: 0 23px 0 8px; }
+    .search-input:focus, .filter-select:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(38, 143, 141, 0.12); }
+
+    .review-list { border-top: 1px solid var(--line); }
+
+    .review-row {
+      display: grid;
+      width: 100%;
+      grid-template-columns: 5px minmax(0, 1fr);
+      gap: 11px;
+      padding: 14px 11px 14px 0;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .review-row:hover, .review-row[aria-pressed="true"] { background: rgba(255, 255, 255, 0.74); }
+    .row-mark { width: 4px; height: 100%; min-height: 37px; border-radius: 2px; background: var(--orange); }
+    .row-mark.clean { background: var(--teal); }
+    .row-content { min-width: 0; }
+    .row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .row-number { color: var(--muted); font: 10px var(--mono); }
+    .row-time { color: #89928a; font: 9px var(--mono); white-space: nowrap; }
+    .row-title { display: block; overflow: hidden; margin: 7px 0 8px; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .row-bottom { display: flex; align-items: center; gap: 6px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 19px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--orange-wash);
+      color: #9b482d;
+      font: 9px var(--mono);
+      white-space: nowrap;
+    }
+
+    .pill.clean { background: var(--teal-wash); color: #286c69; }
+    .pill.low { background: #edf3d8; color: #556329; }
+    .repo-name { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-list { padding: 24px 8px; color: var(--muted); font-size: 12px; text-align: center; }
+
+    .detail-panel { overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+    .detail-head { padding: 18px 19px 16px; border-bottom: 1px solid var(--line); }
+    .detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-bottom: 12px; }
+    .mono-tag { color: var(--muted); font: 10px var(--mono); }
+    .detail-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+    h3 { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: 0; }
+    .complexity { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 4px; background: #f0f3e8; color: #526137; font: 10px var(--mono); }
+    .complexity.high { background: var(--orange-wash); color: #98462d; }
+    .complexity.medium { background: #fff5d7; color: #746126; }
+    .complexity-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .detail-subtitle { margin-top: 8px; color: var(--muted); font-size: 11px; }
+
+    .summary-block { padding: 15px 19px 16px; border-bottom: 1px solid var(--line); }
+    .summary-label { margin-bottom: 7px; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
+    .summary-text { margin: 0; color: #39443c; font-size: 12px; line-height: 1.65; }
+
+    .detail-tabs { display: flex; gap: 20px; padding: 0 19px; border-bottom: 1px solid var(--line); }
+    .tab-button { min-height: 41px; padding: 0 1px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
+    .tab-button[aria-selected="true"] { border-bottom-color: var(--ink); color: var(--ink); font-weight: 700; }
+    .tab-count { margin-left: 5px; color: inherit; font: 9px var(--mono); }
+    .tab-content { min-height: 205px; padding: 4px 19px 17px; }
+
+    .finding { display: grid; grid-template-columns: 23px minmax(0, 1fr); gap: 10px; padding: 13px 0; border-bottom: 1px solid #edf0eb; }
+    .finding:last-child { border-bottom: 0; }
+    .finding-number { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #f0c4b4; border-radius: 50%; background: var(--orange-wash); color: #9b482d; font: 10px var(--mono); }
+    .finding-number.medium { border-color: #ebd794; background: #fff7df; color: #79652d; }
+    .finding-number.low { border-color: #d7e4b2; background: #f1f6df; color: #56672e; }
+    .finding-title-line { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+    .finding-title { font-size: 11px; font-weight: 700; }
+    .finding-location { color: var(--teal); font: 9px var(--mono); }
+    .finding-description { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .no-issues { display: flex; align-items: center; gap: 10px; padding: 23px 0; color: #3b7151; font-size: 12px; }
+    .check-mark { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 50%; background: #e6f3e6; font-weight: 700; }
+
+    .diff-view { overflow-x: auto; padding: 14px 0 4px; font: 10px/1.8 var(--mono); }
+    .diff-file { margin-bottom: 10px; color: var(--muted); }
+    .diff-line { display: grid; grid-template-columns: 34px 1fr; min-width: 450px; padding: 1px 8px; white-space: pre; }
+    .line-number { color: #9aa39b; text-align: right; user-select: none; }
+    .diff-line.add { background: #eaf5e7; color: #275d32; }
+    .diff-line.remove { background: #fff0eb; color: #9b482d; }
+    .diff-line.hunk { color: #597b78; }
+
+    .complexity-note { display: flex; gap: 8px; padding: 12px 19px 15px; border-top: 1px solid var(--line); background: #fafbf8; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .complexity-note strong { color: var(--ink); }
+
+    .flow-section { margin-top: 37px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .flow-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .flow-title p { margin: 0; color: var(--muted); font-size: 10px; }
+    .flow-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
+    .flow-step { position: relative; min-height: 85px; padding: 15px 16px; }
+    .flow-step + .flow-step { border-left: 1px solid var(--line); }
+    .flow-step small { display: block; margin-bottom: 9px; color: var(--muted); font: 9px var(--mono); }
+    .flow-step strong { display: block; font-size: 11px; }
+    .flow-step span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .flow-step:last-child { background: #f1f6e6; }
+
+    .footer-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 22px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .footer-note .icon { width: 14px; height: 14px; margin-top: 1px; }
+
+    @media (max-width: 1050px) {
+      main { padding-right: 28px; padding-left: 28px; }
+      .workspace-grid { grid-template-columns: minmax(235px, 0.78fr) minmax(0, 1.4fr); gap: 16px; }
+    }
+
+    @media (max-width: 760px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { min-height: 0; padding: 13px 16px 0; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0 4px 12px; }
+      .nav-label, .sidebar-bottom { display: none; }
+      .side-nav { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 10px; }
+      .side-nav a { min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 11px; }
+      main { padding: 0 18px 38px; }
+      .topbar { min-height: 54px; }
+      .page-intro { align-items: flex-start; flex-direction: column; padding: 25px 0 19px; }
+      h1 { font-size: 25px; }
+      .metrics { margin: 15px 0 23px; }
+      .metric { padding: 13px 11px; }
+      .metric-value { font-size: 19px; }
+      .metric-value small { display: none; }
+      .metric-label { font-size: 8px; }
+      .workspace-grid { grid-template-columns: 1fr; }
+      .review-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 0; gap: 8px; }
+      .review-row { border: 1px solid var(--line); border-radius: 5px; background: rgba(255, 255, 255, 0.72); padding: 11px 8px; }
+      .row-time { display: none; }
+      .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow-step:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
+      .flow-step:nth-child(4) { border-top: 1px solid var(--line); }
+    }
+
+    @media (max-width: 420px) {
+      main { padding-right: 13px; padding-left: 13px; }
+      .topbar-right { gap: 7px; }
+      .demo-tag { padding: 5px 6px; font-size: 8px; }
+      .avatar { width: 27px; height: 27px; }
+      .notice { padding: 10px; }
+      .detail-head, .summary-block { padding-right: 13px; padding-left: 13px; }
+      .detail-tabs { padding: 0 13px; }
+      .tab-content { padding-right: 13px; padding-left: 13px; }
+      .complexity-note { padding-right: 13px; padding-left: 13px; }
+      .detail-title-row { flex-direction: column; }
+      .filter-select { max-width: 112px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#overview" aria-label="Review Desk home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-name">REVIEW DESK<span>AI PR REVIEW BOT</span></span>
+      </a>
+
+      <p class="nav-label">Workspace</p>
+      <nav class="side-nav">
+        <a href="#overview" aria-current="page">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+          Overview
+        </a>
+        <a href="#reviews">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"></path><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"></path></svg>
+          PR reviews
+        </a>
+        <a href="#workflow">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="19" cy="5" r="2"></circle><circle cx="19" cy="19" r="2"></circle><path d="M7 12h5a4 4 0 0 0 4-4V7M12 12a4 4 0 0 1 4 4v1"></path></svg>
+          Workflow
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="connection">
+          <div class="connection-top"><span class="pulse" aria-hidden="true"></span> GitHub Actions</div>
+          <p>Connection details are managed in the repository. This page uses sample data only.</p>
+        </div>
+        <div class="version">DEMO BUILD / 01</div>
+      </div>
+    </aside>
+
+    <main id="overview">
+      <header class="topbar">
+        <div class="crumb">Workspace <span aria-hidden="true">/</span> <strong>Review desk</strong></div>
+        <div class="topbar-right">
+          <span class="demo-tag"><span class="pulse" aria-hidden="true"></span> Sample data</span>
+          <span class="avatar" aria-label="Bot workspace">RB</span>
+        </div>
+      </header>
+
+      <section class="page-intro" aria-labelledby="page-title">
+        <div>
+          <div class="eyebrow">AI-POWERED PR REVIEW BOT</div>
+          <h1 id="page-title">Review desk</h1>
+          <p>Trace a pull request from changed lines to useful review findings.</p>
+        </div>
+        <a class="button-link" href="https://github.com/Chanakya05-git/AI-Powered-Pull-Request-Review-Bot/actions" target="_blank" rel="noreferrer">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+          Open GitHub Actions
+        </a>
+      </section>
+
+      <div class="notice" role="note">
+        <span class="notice-mark" aria-hidden="true">i</span>
+        <div><strong>Interactive demo, not a live review.</strong> The examples below are static sample data. Real reviews run in GitHub Actions and are delivered to Slack; API credentials are never used by this page.</div>
+      </div>
+
+      <section class="metrics" aria-label="Sample review metrics">
+        <div class="metric"><div class="metric-label">Example reviews</div><div class="metric-value"><span id="metric-total">03</span><small>sample PRs</small></div></div>
+        <div class="metric"><div class="metric-label">Needs attention</div><div class="metric-value"><span id="metric-attention">02</span><small>sample PRs</small></div></div>
+        <div class="metric"><div class="metric-label">Clean review</div><div class="metric-value"><span id="metric-clean">01</span><small>sample PR</small></div></div>
+      </section>
+
+      <div class="workspace-grid" id="reviews">
+        <section aria-labelledby="reviews-heading">
+          <div class="section-heading">
+            <h2 id="reviews-heading">Recent reviews</h2>
+            <span class="count" id="review-count">03 EXAMPLES</span>
+          </div>
+          <div class="list-tools">
+            <label class="search-wrap">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+              <input class="search-input" id="review-search" type="search" placeholder="Find a PR" aria-label="Find a pull request">
+            </label>
+            <select class="filter-select" id="review-filter" aria-label="Filter pull requests">
+              <option value="all">All reviews</option>
+              <option value="attention">Attention</option>
+              <option value="clean">Clean</option>
+            </select>
+          </div>
+          <div class="review-list" id="review-list" aria-label="Pull request examples"></div>
+        </section>
+
+        <section class="detail-panel" aria-label="Selected pull request review" aria-live="polite">
+          <div class="detail-head">
+            <div class="detail-meta" id="detail-meta"></div>
+            <div class="detail-title-row">
+              <h3 id="detail-title"></h3>
+              <span class="complexity" id="detail-complexity"></span>
+            </div>
+            <div class="detail-subtitle" id="detail-subtitle"></div>
+          </div>
+          <div class="summary-block">
+            <div class="summary-label">PR summary</div>
+            <p class="summary-text" id="detail-summary"></p>
+          </div>
+          <div class="detail-tabs" role="tablist" aria-label="Review content">
+            <button class="tab-button" id="findings-tab" type="button" role="tab" aria-selected="true" aria-controls="findings-view">Findings <span class="tab-count" id="finding-count"></span></button>
+            <button class="tab-button" id="diff-tab" type="button" role="tab" aria-selected="false" aria-controls="diff-view">Diff preview</button>
+          </div>
+          <div class="tab-content" id="findings-view" role="tabpanel" aria-labelledby="findings-tab"></div>
+          <div class="tab-content" id="diff-view" role="tabpanel" aria-labelledby="diff-tab" hidden></div>
+          <div class="complexity-note" id="complexity-note"></div>
+        </section>
+      </div>
+
+      <section class="flow-section" id="workflow" aria-labelledby="flow-heading">
+        <div class="flow-title">
+          <h2 id="flow-heading">How a live review moves</h2>
+          <p>Configured in the repository workflow</p>
+        </div>
+        <div class="flow-steps">
+          <div class="flow-step"><small>01 / EVENT</small><strong>Pull request</strong><span>Opened or updated</span></div>
+          <div class="flow-step"><small>02 / RUNNER</small><strong>GitHub Actions</strong><span>Trusted base-branch code</span></div>
+          <div class="flow-step"><small>03 / REVIEW</small><strong>Claude</strong><span>Diff reviewed as data</span></div>
+          <div class="flow-step"><small>04 / DELIVERY</small><strong>Slack</strong><span>Summary and findings</span></div>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-3Z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        Findings are advisory. Verify them against the code and tests; this bot does not approve, merge, or replace human review. Fork PRs do not receive repository secrets.
+      </p>
+    </main>
+  </div>
+
+  <script>
+    const reviews = [
+      {
+        number: 128,
+        title: "Parameterize user lookup query",
+        repo: "review-bot / sample_issues",
+        branch: "fix/user-query",
+        time: "12 MIN AGO",
+        complexity: "High",
+        summary: "This change builds a SQL query by interpolating a caller-provided name. A crafted value can alter the query and expose or modify records. Use a parameterized query and add a test that includes quote characters.",
+        reasoning: "A remotely controlled input reaches a database query, creating a direct security risk.",
+        issues: [
+          { severity: "High", file: "sample_issues/unsafe_query.py", line: "6", title: "User input is interpolated into SQL", detail: "Pass the name as a bound parameter to cursor.execute instead of formatting it into the SQL string." },
+          { severity: "Medium", file: "sample_issues/unsafe_query.py", line: "5-9", title: "Connection is not closed if a query fails", detail: "Use a context manager so the database connection is closed on both success and exception paths." }
+        ],
+        diff: [
+          { kind: "hunk", number: "@@ -1,5 +1,9 @@" },
+          { kind: "context", number: "1", text: "import sqlite3" },
+          { kind: "add", number: "2", text: "" },
+          { kind: "add", number: "3", text: "def find_user(database_path, name):" },
+          { kind: "add", number: "4", text: "    connection = sqlite3.connect(database_path)" },
+          { kind: "add", number: "5", text: "    cursor = connection.cursor()" },
+          { kind: "add", number: "6", text: "    cursor.execute(f\"SELECT * FROM users WHERE name = '{name}'\")" },
+          { kind: "add", number: "7", text: "    result = cursor.fetchone()" }
+        ]
+      },
+      {
+        number: 127,
+        title: "Handle missing values in CSV import",
+        repo: "review-bot / csv-service",
+        branch: "fix/empty-csv-row",
+        time: "38 MIN AGO",
+        complexity: "Medium",
+        summary: "The parser converts the first field to an integer without checking whether the row contains a value. Empty rows can raise an exception and stop the import. Validate the row before conversion and define how invalid rows should be reported.",
+        reasoning: "The change affects one input path and its error behavior, with a contained fix.",
+        issues: [
+          { severity: "Medium", file: "src/csv_import.py", line: "14", title: "Empty rows raise IndexError", detail: "Check that the parsed row has at least one field before indexing it, then handle invalid numeric input." }
+        ],
+        diff: [
+          { kind: "hunk", number: "@@ -11,3 +11,5 @@" },
+          { kind: "context", number: "12", text: "def parse_total(values):" },
+          { kind: "context", number: "13", text: "    first = values[0]" },
+          { kind: "add", number: "14", text: "    return int(first)" },
+          { kind: "add", number: "15", text: "" }
+        ]
+      },
+      {
+        number: 126,
+        title: "Add validated profile parser",
+        repo: "review-bot / profile-service",
+        branch: "feat/profile-parser",
+        time: "1 HR AGO",
+        complexity: "Low",
+        summary: "Adds a small parser that validates the input container, rejects empty values, and reports invalid integers clearly. The change preserves the existing first-value conversion behavior and has no actionable issues in this example.",
+        reasoning: "The change is isolated, defensive, and does not introduce additional control-flow complexity.",
+        issues: [],
+        diff: [
+          { kind: "hunk", number: "@@ -0,0 +1,7 @@" },
+          { kind: "add", number: "1", text: "from collections.abc import Sequence" },
+          { kind: "add", number: "2", text: "" },
+          { kind: "add", number: "3", text: "def parse_total(values: Sequence[str | int]) -> int:" },
+          { kind: "add", number: "4", text: "    if not values:" },
+          { kind: "add", number: "5", text: "        raise ValueError(\"values must contain at least one item\")" }
+        ]
+      }
+    ];
+
+    const listElement = document.querySelector("#review-list");
+    const searchElement = document.querySelector("#review-search");
+    const filterElement = document.querySelector("#review-filter");
+    let selectedNumber = reviews[0].number;
+
+    function renderReviewList() {
+      const query = searchElement.value.trim().toLowerCase();
+      const filter = filterElement.value;
+      const visibleReviews = reviews.filter((review) => {
+        const isClean = review.issues.length === 0;
+        const matchesFilter = filter === "all" || (filter === "clean" ? isClean : !isClean);
+        const matchesSearch = `${review.number} ${review.title} ${review.repo}`.toLowerCase().includes(query);
+        return matchesFilter && matchesSearch;
+      });
+
+      document.querySelector("#review-count").textContent = `${String(visibleReviews.length).padStart(2, "0")} EXAMPLES`;
+      listElement.replaceChildren();
+
+      if (visibleReviews.length === 0) {
+        const emptyMessage = document.createElement("p");
+        emptyMessage.className = "empty-list";
+        emptyMessage.textContent = "No sample reviews match this filter.";
+        listElement.append(emptyMessage);
+        return;
+      }
+
+      if (!visibleReviews.some((review) => review.number === selectedNumber)) {
+        selectedNumber = visibleReviews[0].number;
+      }
+
+      visibleReviews.forEach((review) => {
+        const button = document.createElement("button");
+        const isClean = review.issues.length === 0;
+        button.type = "button";
+        button.className = "review-row";
+        button.dataset.review = review.number;
+        button.setAttribute("aria-pressed", String(review.number === selectedNumber));
+        button.innerHTML = `
+          <span class="row-mark ${isClean ? "clean" : ""}" aria-hidden="true"></span>
+          <span class="row-content">
+            <span class="row-top"><span class="row-number">#${review.number}</span><span class="row-time">${review.time}</span></span>
+            <span class="row-title">${review.title}</span>
+            <span class="row-bottom"><span class="pill ${isClean ? "clean" : ""}">${isClean ? "CLEAN" : `${review.issues.length} FINDING${review.issues.length === 1 ? "" : "S"}`}</span><span class="repo-name">${review.repo}</span></span>
+          </span>`;
+        button.addEventListener("click", () => {
+          selectedNumber = review.number;
+          renderReviewList();
+          renderReviewDetail();
+        });
+        listElement.append(button);
+      });
+
+      renderReviewDetail();
+    }
+
+    function renderReviewDetail() {
+      const review = reviews.find((item) => item.number === selectedNumber);
+      if (!review) return;
+
+      const isClean = review.issues.length === 0;
+      document.querySelector("#detail-meta").innerHTML = `<span class="mono-tag">#${review.number}</span><span class="pill ${isClean ? "clean" : ""}">${isClean ? "NO ISSUES" : "REVIEWED"}</span><span class="mono-tag">${review.branch}</span>`;
+      document.querySelector("#detail-title").textContent = review.title;
+      document.querySelector("#detail-subtitle").textContent = `${review.repo}  /  Updated ${review.time.toLowerCase()}`;
+      document.querySelector("#detail-summary").textContent = review.summary;
+      const complexity = document.querySelector("#detail-complexity");
+      complexity.className = `complexity ${review.complexity.toLowerCase()}`;
+      complexity.innerHTML = `<span class="complexity-dot" aria-hidden="true"></span>${review.complexity} complexity`;
+      document.querySelector("#finding-count").textContent = String(review.issues.length).padStart(2, "0");
+      document.querySelector("#complexity-note").innerHTML = `<span class="eyebrow">WHY</span><span><strong>${review.complexity}:</strong> ${review.reasoning}</span>`;
+
+      const findingsView = document.querySelector("#findings-view");
+      findingsView.replaceChildren();
+      if (isClean) {
+        findingsView.innerHTML = '<div class="no-issues"><span class="check-mark" aria-hidden="true">&#10003;</span><span>No actionable issues found in this sample diff.</span></div>';
+      } else {
+        review.issues.forEach((issue, index) => {
+          const item = document.createElement("article");
+          item.className = "finding";
+          const severityClass = issue.severity.toLowerCase();
+          item.innerHTML = `
+            <span class="finding-number ${severityClass}" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <div class="finding-title-line"><span class="finding-title">${issue.title}</span><span class="pill ${severityClass === "high" ? "" : "low"}">${issue.severity.toUpperCase()}</span></div>
+              <div class="finding-location">${issue.file}:${issue.line}</div>
+              <p class="finding-description">${issue.detail}</p>
+            </div>`;
+          findingsView.append(item);
+        });
+      }
+
+      const diffView = document.querySelector("#diff-view");
+      diffView.replaceChildren();
+      const filename = document.createElement("div");
+      filename.className = "diff-file";
+      filename.textContent = review.issues[0]?.file ?? "sample_issues/fragile_parser.py";
+      diffView.append(filename);
+      const code = document.createElement("div");
+      code.className = "diff-view";
+      review.diff.forEach((line) => {
+        const row = document.createElement("div");
+        row.className = `diff-line ${line.kind}`;
+        const number = document.createElement("span");
+        number.className = "line-number";
+        number.textContent = line.number;
+        const content = document.createElement("span");
+        content.textContent = line.kind === "add" ? `+ ${line.text}` : line.text;
+        row.append(number, content);
+        code.append(row);
+      });
+      diffView.append(code);
+    }
+
+    function selectTab(selectedId) {
+      const findingsSelected = selectedId === "findings-tab";
+      document.querySelector("#findings-tab").setAttribute("aria-selected", String(findingsSelected));
+      document.querySelector("#diff-tab").setAttribute("aria-selected", String(!findingsSelected));
+      document.querySelector("#findings-view").hidden = !findingsSelected;
+      document.querySelector("#diff-view").hidden = findingsSelected;
+    }
+
+    searchElement.addEventListener("input", renderReviewList);
+    filterElement.addEventListener("change", renderReviewList);
+    document.querySelector("#findings-tab").addEventListener("click", () => selectTab("findings-tab"));
+    document.querySelector("#diff-tab").addEventListener("click", () => selectTab("diff-tab"));
+    renderReviewList();
+  </script>
+</body>
+</html>
